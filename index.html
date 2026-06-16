@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Mind OS</title>
+
+<!-- PWA manifest -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2563eb" />
+
+<!-- iOS install support -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Mind OS" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+<!-- Android / general icon -->
+<link rel="icon" type="image/png" href="icons/icon-192.png" />
+
+<style>
+  html, body { margin:0; padding:0; background:#f4f4f6; -webkit-tap-highlight-color: transparent; }
+  #root { min-height: 100vh; }
+  /* Splash while React/Babel load */
+  #boot {
+    position: fixed; inset: 0; background: #f4f4f6;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+  #boot .logo { width: 56px; height: 56px; border-radius: 16px; background: #2563eb;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size: 26px; font-weight:700;
+    box-shadow: 0 4px 16px rgba(37,99,235,.3); margin-bottom: 14px; }
+  #boot .label { color: #71717a; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div class="logo">M</div>
+  <div class="label">Loading Mind OS…</div>
+</div>
+<div id="root"></div>
+
+<!-- React 18 (UMD, no bundler needed) -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<!-- In-browser JSX transform (no build step) -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- App code, transformed in-browser -->
+<script type="text/babel" data-presets="react" src="app.jsx"></script>
+
+<script>
+  // Hide boot splash once root has content
+  const check = setInterval(() => {
+    const root = document.getElementById('root');
+    if (root && root.children.length > 0) {
+      const boot = document.getElementById('boot');
+      if (boot) boot.style.display = 'none';
+      clearInterval(check);
+    }
+  }, 80);
+
+  // Register service worker for offline support
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(console.error);
+    });
+  }
+</script>
+
+</body>
+</html>
