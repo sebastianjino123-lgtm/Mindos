@@ -13,10 +13,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Mind OS" />
-<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 
 <!-- Android / general icon -->
-<link rel="icon" type="image/png" href="icons/icon-192.png" />
+<link rel="icon" type="image/png" href="icon-192.png" />
 
 <style>
   html, body { margin:0; padding:0; background:#f4f4f6; -webkit-tap-highlight-color: transparent; }
@@ -26,27 +26,76 @@
     position: fixed; inset: 0; background: #f4f4f6;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-family: -apple-system, system-ui, sans-serif;
+    padding: 24px; text-align: center;
   }
   #boot .logo { width: 56px; height: 56px; border-radius: 16px; background: #2563eb;
     display:flex; align-items:center; justify-content:center; color:#fff; font-size: 26px; font-weight:700;
     box-shadow: 0 4px 16px rgba(37,99,235,.3); margin-bottom: 14px; }
   #boot .label { color: #71717a; font-size: 14px; }
+  #boot .err {
+    display: none; margin-top: 20px; max-width: 420px;
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
+    padding: 14px 16px; color: #991b1b; font-size: 13px; line-height: 1.6;
+    text-align: left; white-space: pre-wrap; word-break: break-word;
+  }
+  #boot .retry {
+    display:none; margin-top: 14px; background:#2563eb; color:#fff; border:none;
+    border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight:600; cursor:pointer;
+  }
 </style>
 </head>
 <body>
 
 <div id="boot">
   <div class="logo">M</div>
-  <div class="label">Loading Mind OS…</div>
+  <div class="label" id="boot-label">Loading Mind OS…</div>
+  <div class="err" id="boot-err"></div>
+  <button class="retry" id="boot-retry" onclick="location.reload()">Try again</button>
 </div>
 <div id="root"></div>
 
-<!-- React 18 (UMD, no bundler needed) -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+  // ── Visible error handling ──────────────────────────────────────
+  // If anything below fails (CDN down, JS error in app.jsx, etc.)
+  // this shows a real message instead of an infinite "Loading…" spinner.
+  let booted = false;
+
+  function showBootError(msg) {
+    if (booted) return; // app already loaded successfully, ignore late errors
+    const label = document.getElementById('boot-label');
+    const err = document.getElementById('boot-err');
+    const retry = document.getElementById('boot-retry');
+    if (label) label.textContent = 'Something went wrong loading Mind OS';
+    if (err) { err.style.display = 'block'; err.textContent = msg; }
+    if (retry) retry.style.display = 'inline-block';
+  }
+
+  window.addEventListener('error', (e) => {
+    showBootError((e.message || 'Unknown error') + (e.filename ? '\\n\\nFile: ' + e.filename + (e.lineno ? ':' + e.lineno : '') : ''));
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    showBootError('Promise error: ' + (e.reason?.message || e.reason || 'Unknown'));
+  });
+
+  // Timeout safety net: if nothing has mounted after 12s, show a message
+  // even if no error event fired (e.g. a CDN script just hung).
+  setTimeout(() => {
+    const root = document.getElementById('root');
+    if (root && root.children.length === 0) {
+      showBootError('Mind OS is taking longer than expected to load.\\nThis usually means a script failed to download (check your connection), or a CDN (unpkg/jsdelivr) is temporarily unavailable.');
+    }
+  }, 12000);
+</script>
+
+<!-- React 18 (UMD, no bundler needed) — jsdelivr primary, unpkg fallback -->
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"
+  onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/react@18/umd/react.production.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"
+  onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';document.head.appendChild(s);"></script>
 
 <!-- In-browser JSX transform (no build step) -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"
+  onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@babel/standalone/babel.min.js';document.head.appendChild(s);"></script>
 
 <!-- App code, transformed in-browser -->
 <script type="text/babel" data-presets="react" src="app.jsx"></script>
@@ -56,6 +105,7 @@
   const check = setInterval(() => {
     const root = document.getElementById('root');
     if (root && root.children.length > 0) {
+      booted = true;
       const boot = document.getElementById('boot');
       if (boot) boot.style.display = 'none';
       clearInterval(check);
@@ -65,7 +115,9 @@
   // Register service worker for offline support
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js').catch(console.error);
+      navigator.serviceWorker.register('service-worker.js').catch((err) => {
+        console.error('Service worker registration failed:', err);
+      });
     });
   }
 </script>
