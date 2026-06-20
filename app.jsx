@@ -14,7 +14,22 @@ const uid   = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6
 const ch    = (ns,id) => ns.filter(n=>n.parentId===id);
 const desc  = (ns,id) => { const r=[],s=[id]; while(s.length){const c=s.pop();const x=ns.filter(n=>n.parentId===c);r.push(...x);s.push(...x.map(n=>n.id));} return r; };
 const ancs  = (ns,id) => { const p=[];let c=ns.find(n=>n.id===id);while(c?.parentId){c=ns.find(n=>n.id===c.parentId);if(c)p.unshift(c);}return p; };
-const pct   = (ns,gid) => { const l=ns.filter(n=>n.goalId===gid&&ch(ns,n.id).length===0&&n.parentId); if(!l.length)return 0; return Math.round(l.filter(n=>n.done).length/l.length*100); };
+const pct   = (ns,gid) => {
+  const all = ns.filter(n=>n.goalId===gid);
+  const l = all.filter(n=>{
+    if(ch(all,n.id).length>0||!n.parentId) return false; // not a leaf
+    // exclude leaves under a rejected option branch
+    const chain = ancs(all,n.id).concat(n);
+    const rejected = chain.some(a=>{
+      if(!a.isOption||a.chosen) return false;
+      const hasChosenSibling = all.some(s=>s.parentId===a.parentId&&s.isOption&&s.chosen);
+      return hasChosenSibling; // a sibling was chosen, so this branch is rejected
+    });
+    return !rejected;
+  });
+  if(!l.length)return 0;
+  return Math.round(l.filter(n=>n.done).length/l.length*100);
+};
 const hlth  = (ns,gid) => { const gn=ns.filter(n=>n.goalId===gid); if(!gn.length)return{e:"❄️",l:"Dormant",c:"#64748b",bg:"#f1f5f9",d:null}; const lat=Math.max(...gn.map(n=>n.updatedAt||n.ts||0)); const d=Math.floor((Date.now()-lat)/86400000); if(d<=7)return{e:"🔥",l:"Active",c:"#92400e",bg:"#fef3c7",d}; if(d<=30)return{e:"⚠️",l:"Cooling",c:"#9a3412",bg:"#ffedd5",d}; return{e:"❄️",l:"Dormant",c:"#64748b",bg:"#f1f5f9",d}; };
 const dAgo  = d => d===null?"Never":d===0?"Today":d===1?"Yesterday":`${d}d ago`;
 
@@ -524,6 +539,86 @@ input[type=date].date-input{border:none;outline:none;font-size:12px;font-family:
 @keyframes zoomOut{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 .zoom-out{animation:zoomOut .18s ease forwards}
 
+
+/* ── EDIT INLINE ── */
+.step-edit-input{
+  width:100%;border:none;outline:none;background:var(--blue-lt);
+  font-size:15px;font-family:inherit;color:var(--ink);
+  border-radius:6px;padding:4px 8px;margin:-4px -8px;
+}
+.step-edit-input.root-edit{font-size:16px;font-weight:600}
+
+/* ── MOVE PICKER MODAL ── */
+.move-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80;display:flex;align-items:flex-end;justify-content:center}
+.move-sheet{background:var(--white);border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,.2)}
+.move-handle{width:36px;height:4px;background:var(--line2);border-radius:2px;margin:10px auto 4px}
+.move-header{padding:10px 18px 12px;border-bottom:1px solid var(--line)}
+.move-title{font-size:16px;font-weight:700;color:var(--ink)}
+.move-sub{font-size:12px;color:var(--ink4);margin-top:2px}
+.move-list{flex:1;overflow-y:auto;padding:6px 0}
+.move-item{display:flex;align-items:center;gap:10px;padding:11px 18px;cursor:pointer;transition:background .1s}
+.move-item:active{background:var(--bg)}
+.move-item-indent{flex-shrink:0;color:var(--ink4);font-size:12px;white-space:pre}
+.move-item-title{flex:1;font-size:14px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.move-item-root{font-weight:700}
+.move-empty{padding:30px 18px;text-align:center;color:var(--ink4);font-size:13px}
+.move-cancel{padding:12px 18px;border-top:1px solid var(--line);text-align:center;color:var(--blue);font-weight:600;font-size:14px;cursor:pointer}
+
+
+/* ── DECISION BRANCHES ── */
+.decision-group{margin:2px 0 2px 0}
+.decision-label{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;color:#7c3aed;
+  letter-spacing:.06em;text-transform:uppercase;
+  padding:8px 12px 4px;
+}
+.option-card{
+  margin:4px 12px 4px 0;
+  border:1.5px solid #ddd6fe;
+  border-radius:10px;
+  background:#faf8ff;
+  overflow:hidden;
+  transition:all .15s;
+}
+.option-card.chosen{
+  border-color:#8b5cf6;
+  background:#f5f3ff;
+  box-shadow:0 1px 4px rgba(139,92,246,.15);
+}
+.option-card.rejected{
+  opacity:.45;
+  border-color:var(--line);
+  background:var(--bg);
+}
+.option-header{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;cursor:pointer;
+}
+.option-badge{
+  font-size:10px;font-weight:700;color:#7c3aed;
+  background:#ede9fe;border-radius:5px;padding:2px 6px;
+  flex-shrink:0;
+}
+.option-card.chosen .option-badge{background:#8b5cf6;color:#fff}
+.option-title{flex:1;font-size:14px;color:var(--ink);font-weight:500;min-width:0}
+.option-card.rejected .option-title{color:var(--ink4);text-decoration:line-through}
+.choose-btn{
+  font-size:11px;font-weight:700;color:#fff;background:#8b5cf6;
+  border:none;border-radius:6px;padding:5px 10px;cursor:pointer;
+  font-family:inherit;flex-shrink:0;transition:all .1s;
+}
+.choose-btn:active{opacity:.7}
+.chosen-tag{
+  font-size:11px;font-weight:700;color:#8b5cf6;
+  display:flex;align-items:center;gap:3px;flex-shrink:0;
+}
+.unchoose-btn{
+  font-size:11px;color:var(--ink4);background:none;border:none;
+  cursor:pointer;font-family:inherit;flex-shrink:0;text-decoration:underline;
+}
+.option-body{padding:0 12px 10px 12px}
+
 /* ── MISC ── */
 .mt{margin-top:8px}.mt2{margin-top:16px}.mb{margin-bottom:8px}.mb2{margin-bottom:16px}
 .row{display:flex;gap:8px;align-items:center}.f1{flex:1}
@@ -639,17 +734,160 @@ function Welcome({onCapture,onGoToApp}){
 }
 
 /* ════════════════════════════ STEP BODY (shared inner UI) ══════ */
-function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoom,siblings}){
+/* ── MOVE PICKER: choose a new parent for a node ── */
+function MovePicker({node,allNodes,onChoose,onClose}){
+  const excluded = new Set([node.id, ...desc(allNodes,node.id).map(n=>n.id)]);
+  const candidates = allNodes.filter(n=>!excluded.has(n.id));
+
+  // sort so it reads like the tree: root first, then by depth/ts
+  const depthOf = n => ancs(allNodes,n.id).length;
+  candidates.sort((a,b)=> depthOf(a)-depthOf(b) || a.ts-b.ts);
+
+  return(
+    <div className="move-overlay" onClick={onClose}>
+      <div className="move-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="move-handle"/>
+        <div className="move-header">
+          <div className="move-title">Move "{node.title.length>28?node.title.slice(0,28)+"…":node.title}"</div>
+          <div className="move-sub">Choose a step to make this a sub-step of</div>
+        </div>
+        <div className="move-list">
+          {candidates.length===0&&<div className="move-empty">No other steps available to move into.</div>}
+          {candidates.map(c=>{
+            const d = depthOf(c);
+            const isRootNode = !c.parentId;
+            return(
+              <div key={c.id} className="move-item" onClick={()=>onChoose(c.id)}>
+                <span className="move-item-indent">{"　".repeat(d)}{d>0?"└ ":""}</span>
+                <span className={`move-item-title${isRootNode?" move-item-root":""}`}>{isRootNode?"🎯 ":""}{c.title}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="move-cancel" onClick={onClose}>Cancel</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── OPTION CARD: one branch in a decision group ── */
+function OptionCard({option,index,nodes,allNodes,onUpdate,onDelete,onAdd,onMove,onZoom,onReparent,onChoose,onUnchoose,onChooseOption,onUnchooseOption}){
+  const [open,setOpen] = useState(true);
+  const [adding,setAdding] = useState(false);
+  const [editingTitle,setEditingTitle] = useState(false);
+  const [editTxt,setEditTxt] = useState(option.title);
+  const [newTxt,setNewTxt] = useState("");
+  const addRef = useRef(null);
+  const editRef = useRef(null);
+
+  const kids = ch(nodes,option.id).slice().sort((a,b)=>a.ts-b.ts);
+  const letter = String.fromCharCode(65+index); // A, B, C...
+  const isChosen = !!option.chosen;
+  // "rejected" = some sibling was chosen, but not this one
+  const siblingChosen = nodes.some(n=>n.parentId===option.parentId && n.isOption && n.chosen && n.id!==option.id);
+  const isRejected = siblingChosen && !isChosen;
+
+  const toggle = e => {
+    e.stopPropagation();
+    const nd=!option.done;
+    onUpdate(option.id,{done:nd});
+    desc(nodes,option.id).forEach(d=>onUpdate(d.id,{done:nd}));
+  };
+
+  const submitAdd = () => {
+    if(!newTxt.trim()){setAdding(false);return;}
+    onAdd(option.id,newTxt.trim());
+    setNewTxt(""); setTimeout(()=>addRef.current?.focus(),40);
+  };
+
+  const submitEdit = () => {
+    if(editTxt.trim()&&editTxt.trim()!==option.title) onUpdate(option.id,{title:editTxt.trim()});
+    setEditingTitle(false);
+  };
+
+  return(
+    <div className={`option-card${isChosen?" chosen":""}${isRejected?" rejected":""}`}>
+      <div className="option-header" onClick={()=>setOpen(o=>!o)}>
+        <span className="option-badge">{letter}</span>
+        {editingTitle?(
+          <input ref={editRef} className="step-edit-input" style={{flex:1}}
+            value={editTxt} onChange={e=>setEditTxt(e.target.value)}
+            onClick={e=>e.stopPropagation()}
+            onKeyDown={e=>{if(e.key==="Enter")submitEdit();if(e.key==="Escape")setEditingTitle(false);}}
+            onBlur={submitEdit} autoFocus/>
+        ):(
+          <span className="option-title">{option.title}</span>
+        )}
+        {kids.length>0&&<span style={{fontSize:11,color:"var(--ink4)",flexShrink:0}}>{open?"▾":"▸"} {kids.length}</span>}
+        {isChosen?(
+          <span className="chosen-tag">✓ Chosen</span>
+        ):isRejected?(
+          <span style={{fontSize:11,color:"var(--ink4)"}}>Not chosen</span>
+        ):(
+          <button className="choose-btn" onClick={e=>{e.stopPropagation();onChoose();}}>✓ Choose this</button>
+        )}
+      </div>
+
+      {open&&(
+        <div className="option-body" onClick={e=>e.stopPropagation()}>
+          {/* mini action row */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:kids.length>0?8:0}}>
+            <button className="pill pill-gray" style={{fontSize:10,padding:"2px 7px"}} onClick={()=>setAdding(a=>!a)}>+ Sub-step</button>
+            <button className="pill pill-gray" style={{fontSize:10,padding:"2px 7px"}} onClick={()=>{setEditTxt(option.title);setEditingTitle(true);setTimeout(()=>editRef.current?.focus(),30);}}>✎ Edit</button>
+            {isChosen&&<button className="unchoose-btn" onClick={onUnchoose}>Undo choice</button>}
+            <button className="pill pill-red" style={{fontSize:10,padding:"2px 7px",marginLeft:"auto"}}
+              onClick={()=>{if(kids.length>0&&!window.confirm("Delete this option and its sub-steps?"))return;onDelete(option.id);}}>Delete option</button>
+          </div>
+
+          {/* sub-steps of this option */}
+          {kids.length>0&&(
+            <div className="step-children" style={{margin:0,border:"none",background:"transparent"}}>
+              {kids.map((k,i)=>(
+                <TreeRow key={k.id} node={k} nodes={nodes} allNodes={allNodes} goalId={option.goalId}
+                  depth={1} isLast={i===kids.length-1} spineDepths={[]}
+                  onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd}
+                  onMove={onMove} onZoom={onZoom} onReparent={onReparent}
+                  onChooseOption={onChooseOption} onUnchooseOption={onUnchooseOption}/>
+              ))}
+            </div>
+          )}
+
+          {adding&&(
+            <div className="add-child-row" style={{marginLeft:0}}>
+              <input ref={addRef} className="add-child-input" value={newTxt}
+                onChange={e=>setNewTxt(e.target.value)}
+                placeholder="Sub-step for this option…"
+                onKeyDown={e=>{if(e.key==="Enter")submitAdd();if(e.key==="Escape"){setAdding(false);setNewTxt("");}}}
+                autoFocus/>
+              {newTxt.trim()&&<button className="pill pill-blue" style={{marginRight:8,flexShrink:0}} onClick={submitAdd}>Add</button>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepBody({node,nodes,allNodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoom,onReparent,onChooseOption,onUnchooseOption,siblings}){
   const [active,setActive]     = useState(false);
   const [adding,setAdding]     = useState(false);
+  const [addingOption,setAddingOption] = useState(false);
   const [editingNote,setEditingNote] = useState(false);
+  const [editingTitle,setEditingTitle] = useState(false);
+  const [editTxt,setEditTxt]   = useState(node.title);
+  const [showMove,setShowMove] = useState(false);
   const [showDate,setShowDate] = useState(false);
   const [aiLoad,setAiLoad]     = useState(false);
   const [newTxt,setNewTxt]     = useState("");
+  const [newOptTxt,setNewOptTxt] = useState("");
   const [open,setOpen]         = useState(true);
   const addRef = useRef(null);
+  const optRef = useRef(null);
+  const editRef = useRef(null);
 
   const kids   = ch(nodes,node.id);
+  const regularKids = kids.filter(k=>!k.isOption);
+  const optionKids   = kids.filter(k=>k.isOption);
   const isLeaf = kids.length===0;
   const hasNote = !!(node.note?.trim());
 
@@ -665,6 +903,18 @@ function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoo
     onAdd(node.id,newTxt.trim());
     setNewTxt("");
     setTimeout(()=>addRef.current?.focus(),40);
+  };
+
+  const submitOption = () => {
+    if(!newOptTxt.trim()){setAddingOption(false);return;}
+    onAdd(node.id,newOptTxt.trim(),{isOption:true,chosen:false});
+    setNewOptTxt("");
+    setTimeout(()=>optRef.current?.focus(),40);
+  };
+
+  const submitEdit = () => {
+    if(editTxt.trim()&&editTxt.trim()!==node.title) onUpdate(node.id,{title:editTxt.trim()});
+    setEditingTitle(false);
   };
 
   const doAI = async e => {
@@ -683,7 +933,7 @@ function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoo
       {/* ── Row header ── */}
       <div
         className={isCard?"step-root-row":"step-content"}
-        onClick={()=>setActive(a=>!a)}
+        onClick={()=>{if(!editingTitle)setActive(a=>!a);}}
       >
         {/* checkbox */}
         <div
@@ -691,9 +941,17 @@ function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoo
           onClick={toggle}
         />
         <div className="step-body">
-          <div className={`step-title${node.done?" done":""}${!isLeaf?" parent":""}${isCard?" root-title":""}`}>
-            {node.title}
-          </div>
+          {editingTitle?(
+            <input ref={editRef} className={`step-edit-input${isCard?" root-edit":""}`}
+              value={editTxt} onChange={e=>setEditTxt(e.target.value)}
+              onClick={e=>e.stopPropagation()}
+              onKeyDown={e=>{if(e.key==="Enter")submitEdit();if(e.key==="Escape")setEditingTitle(false);}}
+              onBlur={submitEdit} autoFocus/>
+          ):(
+            <div className={`step-title${node.done?" done":""}${!isLeaf?" parent":""}${isCard?" root-title":""}`}>
+              {node.title}
+            </div>
+          )}
           {(hasNote||editingNote)&&(
             <textarea className="step-note-area" rows={1}
               value={node.note||""}
@@ -709,6 +967,9 @@ function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoo
           {active&&(
             <div className="step-pills" onClick={e=>e.stopPropagation()}>
               <button className="pill pill-blue" onClick={()=>{setAdding(a=>!a);setActive(false);}}>+ Sub-step</button>
+              <button className="pill" style={{background:"#ede9fe",color:"#7c3aed"}} onClick={()=>{setAddingOption(a=>!a);setActive(false);}}>⑂ + Option</button>
+              <button className="pill pill-gray" onClick={()=>{setEditTxt(node.title);setEditingTitle(true);setActive(false);setTimeout(()=>editRef.current?.focus(),30);}}>✎ Edit</button>
+              {!isRoot&&onReparent&&<button className="pill pill-gray" onClick={()=>{setShowMove(true);setActive(false);}}>↗ Move</button>}
               <button className="pill pill-gray" onClick={()=>{setEditingNote(true);setActive(false);}}>📝 Note</button>
               <button className="pill pill-gray" onClick={e=>{e.stopPropagation();setShowDate(s=>!s);setActive(false);}}>📅 Date</button>
               {!isLeaf&&onZoom&&<button className="pill pill-zoom" onClick={e=>{e.stopPropagation();onZoom(node.id);setActive(false);}}>⤢ Focus</button>}
@@ -740,16 +1001,52 @@ function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoo
         )}
       </div>
 
-      {/* ── Children tree ── */}
-      {open&&kids.length>0&&(
+      {/* Move picker modal */}
+      {showMove&&allNodes&&(
+        <MovePicker node={node} allNodes={allNodes}
+          onChoose={(newParentId)=>{onReparent(node.id,newParentId);setShowMove(false);}}
+          onClose={()=>setShowMove(false)}/>
+      )}
+
+      {/* ── Decision branches (options) ── */}
+      {open&&optionKids.length>0&&(
+        <div className="decision-group">
+          <div className="decision-label">⑂ Choose one</div>
+          {optionKids.slice().sort((a,b)=>a.ts-b.ts).map((opt,i)=>(
+            <OptionCard key={opt.id} option={opt} index={i} nodes={nodes} allNodes={allNodes}
+              onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd}
+              onMove={onMove} onZoom={onZoom} onReparent={onReparent}
+              onChoose={()=>onChooseOption(opt.id)} onUnchoose={()=>onUnchooseOption(opt.id)}
+              onChooseOption={onChooseOption} onUnchooseOption={onUnchooseOption}/>
+          ))}
+        </div>
+      )}
+
+      {/* ── Inline add option ── */}
+      {addingOption&&(
+        <div className="add-child-row" style={{background:"#f5f3ff"}}>
+          <div style={{width:14,flexShrink:0}}/>
+          <div className="add-step-icon" style={{width:18,height:18,fontSize:13,background:"#8b5cf6"}}>⑂</div>
+          <input ref={optRef} className="add-child-input" value={newOptTxt}
+            onChange={e=>setNewOptTxt(e.target.value)}
+            placeholder="New option… e.g. Single storey plan"
+            onKeyDown={e=>{if(e.key==="Enter")submitOption();if(e.key==="Escape"){setAddingOption(false);setNewOptTxt("");}}}
+            autoFocus/>
+          {newOptTxt.trim()&&<button className="pill" style={{marginRight:8,flexShrink:0,background:"#8b5cf6",color:"#fff"}} onClick={submitOption}>Add</button>}
+        </div>
+      )}
+
+      {/* ── Children tree (regular sub-steps only) ── */}
+      {open&&regularKids.length>0&&(
         <div className="step-children">
-          {sortedKids.map((k,i)=>{
-            const isLast = i===sortedKids.length-1;
+          {regularKids.slice().sort((a,b)=>a.ts-b.ts).map((k,i)=>{
+            const isLast = i===regularKids.length-1;
             return(
-              <TreeRow key={k.id} node={k} nodes={nodes} goalId={node.goalId}
+              <TreeRow key={k.id} node={k} nodes={nodes} allNodes={allNodes} goalId={node.goalId}
                 depth={1} isLast={isLast} spineDepths={[]}
                 onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd}
-                onMove={onMove} onZoom={onZoom}/>
+                onMove={onMove} onZoom={onZoom} onReparent={onReparent}
+                onChooseOption={onChooseOption} onUnchooseOption={onUnchooseOption}/>
             );
           })}
         </div>
@@ -773,20 +1070,29 @@ function StepBody({node,nodes,isRoot,isCard,onUpdate,onDelete,onAdd,onMove,onZoo
 }
 
 /* ── TreeRow: renders a child row with spine lines ── */
-function TreeRow({node,nodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,onAdd,onMove,onZoom}){
+function TreeRow({node,nodes,allNodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,onAdd,onMove,onZoom,onReparent,onChooseOption,onUnchooseOption}){
   const [open,setOpen]     = useState(true);
   const [active,setActive] = useState(false);
   const [adding,setAdding] = useState(false);
+  const [addingOption,setAddingOption] = useState(false);
   const [editingNote,setEditingNote] = useState(false);
+  const [editingTitle,setEditingTitle] = useState(false);
+  const [editTxt,setEditTxt] = useState(node.title);
+  const [showMove,setShowMove] = useState(false);
   const [showDate,setShowDate] = useState(false);
   const [aiLoad,setAiLoad] = useState(false);
   const [newTxt,setNewTxt] = useState("");
+  const [newOptTxt,setNewOptTxt] = useState("");
   const addRef = useRef(null);
+  const optRef = useRef(null);
+  const editRef = useRef(null);
 
   const kids   = ch(nodes,node.id);
+  const regularKids = kids.filter(k=>!k.isOption);
+  const optionKids = kids.filter(k=>k.isOption);
   const isLeaf = kids.length===0;
   const hasNote = !!(node.note?.trim());
-  const sortedKids = kids.slice().sort((a,b)=>a.ts-b.ts);
+  const sortedKids = regularKids.slice().sort((a,b)=>a.ts-b.ts);
 
   const toggle = e => {
     e.stopPropagation();
@@ -799,6 +1105,17 @@ function TreeRow({node,nodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,o
     if(!newTxt.trim()){setAdding(false);return;}
     onAdd(node.id,newTxt.trim());
     setNewTxt(""); setTimeout(()=>addRef.current?.focus(),40);
+  };
+
+  const submitOption = () => {
+    if(!newOptTxt.trim()){setAddingOption(false);return;}
+    onAdd(node.id,newOptTxt.trim(),{isOption:true,chosen:false});
+    setNewOptTxt(""); setTimeout(()=>optRef.current?.focus(),40);
+  };
+
+  const submitEdit = () => {
+    if(editTxt.trim()&&editTxt.trim()!==node.title) onUpdate(node.id,{title:editTxt.trim()});
+    setEditingTitle(false);
   };
 
   const doAI = async e => {
@@ -823,10 +1140,18 @@ function TreeRow({node,nodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,o
           <div className={`spine-hook${isLast?" last-child":""}`}/>
         </div>
         {/* content */}
-        <div className="step-content" onClick={()=>setActive(a=>!a)}>
+        <div className="step-content" onClick={()=>{if(!editingTitle)setActive(a=>!a);}}>
           <div className={`step-check${node.done?" on":""}${!isLeaf?" sq":""}`} onClick={toggle}/>
           <div className="step-body">
-            <div className={`step-title${node.done?" done":""}${!isLeaf?" parent":""}`}>{node.title}</div>
+            {editingTitle?(
+              <input ref={editRef} className="step-edit-input"
+                value={editTxt} onChange={e=>setEditTxt(e.target.value)}
+                onClick={e=>e.stopPropagation()}
+                onKeyDown={e=>{if(e.key==="Enter")submitEdit();if(e.key==="Escape")setEditingTitle(false);}}
+                onBlur={submitEdit} autoFocus/>
+            ):(
+              <div className={`step-title${node.done?" done":""}${!isLeaf?" parent":""}`}>{node.title}</div>
+            )}
             {(hasNote||editingNote)&&(
               <textarea className="step-note-area" rows={1}
                 value={node.note||""}
@@ -841,6 +1166,9 @@ function TreeRow({node,nodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,o
             {active&&(
               <div className="step-pills" onClick={e=>e.stopPropagation()}>
                 <button className="pill pill-blue" onClick={()=>{setAdding(a=>!a);setActive(false);}}>+ Sub-step</button>
+                <button className="pill" style={{background:"#ede9fe",color:"#7c3aed"}} onClick={()=>{setAddingOption(a=>!a);setActive(false);}}>⑂ + Option</button>
+                <button className="pill pill-gray" onClick={()=>{setEditTxt(node.title);setEditingTitle(true);setActive(false);setTimeout(()=>editRef.current?.focus(),30);}}>✎ Edit</button>
+                {onReparent&&<button className="pill pill-gray" onClick={()=>{setShowMove(true);setActive(false);}}>↗ Move</button>}
                 <button className="pill pill-gray" onClick={()=>{setEditingNote(true);setActive(false);}}>📝 Note</button>
                 <button className="pill pill-gray" onClick={e=>{e.stopPropagation();setShowDate(s=>!s);setActive(false);}}>📅 Date</button>
                 {!isLeaf&&onZoom&&<button className="pill pill-zoom" onClick={e=>{e.stopPropagation();onZoom(node.id);setActive(false);}}>⤢ Focus</button>}
@@ -871,16 +1199,53 @@ function TreeRow({node,nodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,o
         </div>
       </div>
 
-      {/* children */}
+      {/* Move picker modal */}
+      {showMove&&allNodes&&(
+        <MovePicker node={node} allNodes={allNodes}
+          onChoose={(newParentId)=>{onReparent(node.id,newParentId);setShowMove(false);}}
+          onClose={()=>setShowMove(false)}/>
+      )}
+
+      {/* Decision branches (options) */}
+      {open&&optionKids.length>0&&(
+        <div className="decision-group" style={{marginLeft:spineDepths.length*14+20}}>
+          <div className="decision-label">⑂ Choose one</div>
+          {optionKids.slice().sort((a,b)=>a.ts-b.ts).map((opt,i)=>(
+            <OptionCard key={opt.id} option={opt} index={i} nodes={nodes} allNodes={allNodes}
+              onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd}
+              onMove={onMove} onZoom={onZoom} onReparent={onReparent}
+              onChoose={()=>onChooseOption(opt.id)} onUnchoose={()=>onUnchooseOption(opt.id)}
+              onChooseOption={onChooseOption} onUnchooseOption={onUnchooseOption}/>
+          ))}
+        </div>
+      )}
+
+      {/* Inline add option */}
+      {addingOption&&(
+        <div className="add-child-row" style={{background:"#f5f3ff"}}>
+          {spineDepths.map((hl,i)=><div key={i} style={{width:14,flexShrink:0}}/>)}
+          <div style={{width:14,flexShrink:0}}/>
+          <div className="add-step-icon" style={{width:18,height:18,fontSize:13,background:"#8b5cf6"}}>⑂</div>
+          <input ref={optRef} className="add-child-input" value={newOptTxt}
+            onChange={e=>setNewOptTxt(e.target.value)}
+            placeholder="New option…"
+            onKeyDown={e=>{if(e.key==="Enter")submitOption();if(e.key==="Escape"){setAddingOption(false);setNewOptTxt("");}}}
+            autoFocus/>
+          {newOptTxt.trim()&&<button className="pill" style={{marginRight:8,flexShrink:0,background:"#8b5cf6",color:"#fff"}} onClick={submitOption}>Add</button>}
+        </div>
+      )}
+
+      {/* children (regular sub-steps only) */}
       {open&&sortedKids.length>0&&sortedKids.map((k,i)=>{
         const childIsLast = i===sortedKids.length-1;
         // pass down spine info: previous levels' "has more siblings" flags
         const childSpine = [...spineDepths, !isLast];
         return(
-          <TreeRow key={k.id} node={k} nodes={nodes} goalId={goalId}
+          <TreeRow key={k.id} node={k} nodes={nodes} allNodes={allNodes} goalId={goalId}
             depth={depth+1} isLast={childIsLast} spineDepths={childSpine}
             onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd}
-            onMove={onMove} onZoom={onZoom}/>
+            onMove={onMove} onZoom={onZoom} onReparent={onReparent}
+            onChooseOption={onChooseOption} onUnchooseOption={onUnchooseOption}/>
         );
       })}
 
@@ -906,12 +1271,13 @@ function TreeRow({node,nodes,goalId,depth,isLast,spineDepths,onUpdate,onDelete,o
 }
 
 /* ── Step: top-level card wrapper ── */
-function Step({node,nodes,goalId,depth,onUpdate,onDelete,onAdd,onMove,onZoom}){
+function Step({node,nodes,allNodes,goalId,depth,onUpdate,onDelete,onAdd,onMove,onZoom,onReparent,onChooseOption,onUnchooseOption}){
   return(
     <div className="step-card">
-      <StepBody node={node} nodes={nodes} isRoot={false} isCard
+      <StepBody node={node} nodes={nodes} allNodes={allNodes} isRoot={false} isCard
         onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd}
-        onMove={onMove} onZoom={onZoom}/>
+        onMove={onMove} onZoom={onZoom} onReparent={onReparent}
+        onChooseOption={onChooseOption} onUnchooseOption={onUnchooseOption}/>
     </div>
   );
 }
@@ -932,7 +1298,31 @@ function GoalDetail({db,setDb,goalId,onBack}){
 
   const upd=useCallback((id,ch_)=>{setDb(d=>{const n={...d,nodes:d.nodes.map(x=>x.id===id?{...x,...ch_,updatedAt:Date.now()}:x)};save(n);return n;});},[]);
   const del=useCallback((id)=>{setDb(d=>{const kill=[id,...desc(d.nodes,id).map(n=>n.id)];const n={...d,nodes:d.nodes.filter(x=>!kill.includes(x.id))};save(n);return n;});},[]);
-  const add=useCallback((pid,text)=>{const nn={id:uid(),parentId:pid,goalId,title:text,done:false,note:"",ts:Date.now(),updatedAt:Date.now()};setDb(d=>{const n={...d,nodes:[...d.nodes,nn]};save(n);return n;});},[goalId]);
+  const add=useCallback((pid,text,opts={})=>{const nn={id:uid(),parentId:pid,goalId,title:text,done:false,note:"",ts:Date.now(),updatedAt:Date.now(),...opts};setDb(d=>{const n={...d,nodes:[...d.nodes,nn]};save(n);return n;});},[goalId]);
+  const chooseOption=useCallback((nodeId)=>{
+    setDb(d=>{
+      const node = d.nodes.find(n=>n.id===nodeId);
+      if(!node) return d;
+      const n={...d,nodes:d.nodes.map(x=>{
+        if(x.id===nodeId) return {...x,chosen:true,updatedAt:Date.now()};
+        if(x.parentId===node.parentId && x.isOption) return {...x,chosen:false};
+        return x;
+      })};
+      save(n); return n;
+    });
+  },[]);
+  const unchooseOption=useCallback((nodeId)=>{
+    setDb(d=>{const n={...d,nodes:d.nodes.map(x=>x.id===nodeId?{...x,chosen:false,updatedAt:Date.now()}:x)};save(n);return n;});
+  },[]);
+  const reparent=useCallback((nodeId,newParentId)=>{
+    setDb(d=>{
+      // guard: never allow moving a node into itself or its own descendant
+      const blocked = new Set([nodeId, ...desc(d.nodes,nodeId).map(n=>n.id)]);
+      if(blocked.has(newParentId)) return d;
+      const n={...d,nodes:d.nodes.map(x=>x.id===nodeId?{...x,parentId:newParentId,updatedAt:Date.now(),ts:Date.now()}:x)};
+      save(n); return n;
+    });
+  },[]);
   const saveTitle=()=>{if(title.trim()&&title.trim()!==goal?.title)setDb(d=>{const n={...d,goals:d.goals.map(g=>g.id===goalId?{...g,title:title.trim()}:g),nodes:d.nodes.map(nd=>nd.goalId===goalId&&!nd.parentId?{...nd,title:title.trim()}:nd)};save(n);return n;});};
 
   const doZoom=(id)=>{setZoomAnim("zoom-in");setFocusId(id);setAdding(false);};
@@ -1018,11 +1408,12 @@ function GoalDetail({db,setDb,goalId,onBack}){
 
       {/* Steps — filtered to current scope */}
       <div className={`steps ${zoomAnim}`} onAnimationEnd={()=>setZoomAnim("")}>
-        {ch(nodes,viewRoot.id).sort((a,b)=>a.ts-b.ts).map(k=>(
-          <Step key={k.id} node={k} nodes={nodes} goalId={goalId} depth={0}
+        {ch(nodes,viewRoot.id).filter(k=>!k.isOption).sort((a,b)=>a.ts-b.ts).map(k=>(
+          <Step key={k.id} node={k} nodes={nodes} allNodes={allNodes} goalId={goalId} depth={0}
             onUpdate={upd} onDelete={del} onAdd={add}
             onMove={(id,dir)=>{setDb(d=>{const n={...d,nodes:moveNode(d.nodes,id,dir)};save(n);return n;});}}
-            onZoom={doZoom}
+            onZoom={doZoom} onReparent={reparent}
+            onChooseOption={chooseOption} onUnchooseOption={unchooseOption}
           />
         ))}
         {adding?(
