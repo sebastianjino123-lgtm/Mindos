@@ -1,5 +1,5 @@
 {
-  "name": "Mind OS v2 — Never let an idea die",
+  "name": "Mind OS v2 \u2014 Never let an idea die",
   "short_name": "Mind OS",
   "description": "A planning engine with goals, steps, decisions, and daily focus. Now with dark mode, export, and archive.",
   "start_url": "./index.html",
@@ -9,7 +9,17 @@
   "background_color": "#f4f4f6",
   "theme_color": "#2563eb",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
