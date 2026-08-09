@@ -1,4 +1,3 @@
-
 const { useState, useRef, useCallback, useEffect, useMemo } = React;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1587,7 +1586,7 @@ function TodayTab({ db, setDb, onOpen }) {
     <div className="scroll">
       <div className="today-hero">
         <div style={{fontSize:11,fontWeight:700,opacity:.65,marginBottom:6,letterSpacing:".8px",textTransform:"uppercase"}}>
-          {hr<12?"Good morning":"hr<17?"Good afternoon":"Good evening"} · {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+          {hr<12?"Good morning":hr<17?"Good afternoon":"Good evening"} · {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-.6px", marginBottom: total ? 16 : 4, lineHeight: 1.15 }}>
           {total === 0 ? "Nothing planned
