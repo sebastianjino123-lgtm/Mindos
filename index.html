@@ -4,75 +4,96 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Mind OS</title>
+
+<script>
+  (function() {
+    const t = localStorage.getItem('mindos_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#2563eb" />
+<meta name="theme-color" content="#2563eb" id="theme-meta" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Mind OS" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="icon" type="image/png" href="icon-192.png" />
+
 <style>
   html,body{margin:0;padding:0;background:#f4f4f6;-webkit-tap-highlight-color:transparent}
+  [data-theme="dark"] body{background:#09090b}
   #root{min-height:100vh}
-  #boot{position:fixed;inset:0;background:#f4f4f6;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;padding:24px;text-align:center}
-  .boot-logo{width:56px;height:56px;border-radius:16px;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:700;box-shadow:0 4px 16px rgba(37,99,235,.3);margin-bottom:14px}
-  .boot-label{color:#71717a;font-size:14px}
-  #boot-err{display:none;margin-top:20px;max-width:420px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:#991b1b;font-size:13px;line-height:1.6;text-align:left}
-  #boot-retry{display:none;margin-top:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:14px;font-weight:600;cursor:pointer}
+  #boot{position:fixed;inset:0;background:#f4f4f6;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;padding:24px;text-align:center;transition:background .2s}
+  [data-theme="dark"] #boot{background:#09090b}
+  #boot .logo{width:56px;height:56px;border-radius:16px;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:700;box-shadow:0 4px 16px rgba(37,99,235,.3);margin-bottom:14px}
+  #boot .label{color:#71717a;font-size:14px}
+  [data-theme="dark"] #boot .label{color:#a1a1aa}
+  #boot .err{display:none;margin-top:20px;max-width:420px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:#991b1b;font-size:13px;line-height:1.6;text-align:left;white-space:pre-wrap;word-break:break-word}
+  #boot .retry{display:none;margin-top:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
+
 <div id="boot">
-  <div class="boot-logo">M</div>
-  <div class="boot-label" id="boot-label">Loading Mind OS…</div>
-  <div id="boot-err"></div>
-  <button id="boot-retry" onclick="location.reload()">Try again</button>
+  <div class="logo">M</div>
+  <div class="label" id="boot-label">Loading Mind OS…</div>
+  <div class="err" id="boot-err"></div>
+  <button class="retry" id="boot-retry" onclick="location.reload()">Try again</button>
 </div>
 <div id="root"></div>
 
 <script>
-var booted = false;
-function showError(msg) {
-  if (booted) return;
-  document.getElementById('boot-label').textContent = 'Something went wrong loading Mind OS';
-  var e = document.getElementById('boot-err');
-  var r = document.getElementById('boot-retry');
-  if (e) { e.style.display = 'block'; e.textContent = msg; }
-  if (r) r.style.display = 'inline-block';
-}
-window.addEventListener('error', function(e) {
-  showError((e.message||'Unknown error') + (e.filename ? '\nFile: ' + e.filename + (e.lineno?':'+e.lineno:'') : ''));
-});
-window.addEventListener('unhandledrejection', function(e) {
-  showError('Error: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
-});
-setTimeout(function() {
-  if (!booted) showError('Took too long to load. Make sure react.min.js, react-dom.min.js, and babel.min.js are in your GitHub repo.');
-}, 15000);
+  var booted = false;
+  function showBootError(msg) {
+    if (booted) return;
+    var label = document.getElementById('boot-label');
+    var err   = document.getElementById('boot-err');
+    var retry = document.getElementById('boot-retry');
+    if (label) label.textContent = 'Something went wrong loading Mind OS';
+    if (err)   { err.style.display = 'block'; err.textContent = msg; }
+    if (retry) retry.style.display = 'inline-block';
+  }
+  window.addEventListener('error', function(e) {
+    showBootError((e.message||'Unknown error') + (e.filename ? '\n\nFile: ' + e.filename + (e.lineno ? ':' + e.lineno : '') : ''));
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    showBootError('Error: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason||'Unknown')));
+  });
+  setTimeout(function() {
+    var root = document.getElementById('root');
+    if (root && root.children.length === 0) {
+      showBootError('Mind OS took too long to load.\n\nMake sure these 3 files are in your GitHub repo:\n• react.min.js\n• react-dom.min.js\n• babel.min.js\n\nSee README for download links.');
+    }
+  }, 15000);
 </script>
 
-<!-- Local copies — no CDN dependency -->
+<!-- Libraries loaded locally — no CDN dependency -->
 <script src="react.min.js"></script>
 <script src="react-dom.min.js"></script>
 <script src="babel.min.js"></script>
 
-<!-- App -->
+<!-- App code, transformed in-browser by Babel -->
 <script type="text/babel" data-presets="react" src="app.jsx"></script>
 
 <script>
-var check = setInterval(function() {
-  var root = document.getElementById('root');
-  if (root && root.children.length > 0) {
-    booted = true;
-    document.getElementById('boot').style.display = 'none';
-    clearInterval(check);
+  var check = setInterval(function() {
+    var root = document.getElementById('root');
+    if (root && root.children.length > 0) {
+      booted = true;
+      var boot = document.getElementById('boot');
+      if (boot) boot.style.display = 'none';
+      clearInterval(check);
+    }
+  }, 80);
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('service-worker.js').catch(function(e) {
+        console.error('SW failed:', e);
+      });
+    });
   }
-}, 80);
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('service-worker.js').catch(function(){});
-  });
-}
 </script>
+
 </body>
 </html>
