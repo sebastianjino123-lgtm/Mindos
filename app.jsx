@@ -1589,9 +1589,7 @@ function TodayTab({ db, setDb, onOpen }) {
           {hr<12?"Good morning":hr<17?"Good afternoon":"Good evening"} · {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-.6px", marginBottom: total ? 16 : 4, lineHeight: 1.15 }}>
-          {total === 0 ? "Nothing planned
-for today." : doneFoc.length === total ? "All done! 🎉" : `${foc.length} left
-to do today.`}
+          {total === 0 ? "Nothing planned today." : doneFoc.length === total ? "All done! 🎉" : `${foc.length} task${foc.length !== 1 ? "s" : ""} left today.`}
         </div>
         {total > 0 && <>
           <div style={{ height: 5, background: "rgba(255,255,255,.25)", borderRadius: 9, overflow: "hidden", marginBottom:6 }}>
