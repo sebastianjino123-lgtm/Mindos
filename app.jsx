@@ -131,8 +131,9 @@ const S = `
   --orange:#ea580c;--purple:#7c3aed;
   --r4:4px;--r8:8px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;--rfull:9999px;
   --shadow-sm:0 1px 2px rgba(0,0,0,.05);
-  --shadow:0 1px 3px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.08);
-  --shadow-lg:0 4px 16px rgba(0,0,0,.12);
+  --shadow:0 2px 4px rgba(0,0,0,.06),0 8px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.12),0 1px 4px rgba(0,0,0,.06);
+  --shadow-card:0 1px 3px rgba(0,0,0,.08),0 6px 14px rgba(0,0,0,.06);
 }
 [data-theme="dark"]{
   --ink:#fafafa;--ink2:#e4e4e7;--ink3:#a1a1aa;--ink4:#71717a;
@@ -156,7 +157,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;bac
 .status-time{font-size:15px;font-weight:600;color:var(--ink)}
 .status-icons{display:flex;gap:5px;align-items:center;font-size:12px;font-weight:600;color:var(--ink)}
 
-.nav{background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:44px;flex-shrink:0;position:sticky;top:0;z-index:50}
+.nav{background:rgba(255,255,255,.94);backdrop-filter:saturate(200%) blur(24px);-webkit-backdrop-filter:saturate(200%) blur(24px);border-bottom:1px solid rgba(0,0,0,.06);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:46px;flex-shrink:0;position:sticky;top:0;z-index:50}
 [data-theme="dark"] .nav{background:rgba(24,24,27,.92);border-bottom:1px solid rgba(255,255,255,.06)}
 .nav-title{font-size:17px;font-weight:600;color:var(--ink);letter-spacing:-.2px;flex:1;text-align:center}
 .nav-side{min-width:72px;display:flex;align-items:center}
@@ -178,34 +179,36 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;bac
 .scroll::-webkit-scrollbar{display:none}
 
 .section-head{padding:20px 16px 8px;display:flex;align-items:center;justify-content:space-between}
-.section-label{font-size:13px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.6px}
+.section-label{font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.8px}
 
-.list{background:var(--white);border-radius:var(--r12);overflow:hidden;border:1px solid var(--line);margin:0 16px}
+.list{background:var(--white);border-radius:var(--r16);overflow:hidden;border:1px solid var(--line);margin:0 16px;box-shadow:var(--shadow-sm)}
 .list-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);min-height:50px;position:relative;transition:background .1s}
 .list-item:last-child{border-bottom:none}
 .list-item:active{background:var(--bg)}
 .list-icon{width:30px;height:30px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .list-body{flex:1;min-width:0}
-.list-title{font-size:15px;font-weight:500;color:var(--ink);line-height:1.3}
+.list-title{font-size:15px;font-weight:500;color:var(--ink);line-height:1.35;letter-spacing:-.1px}
 .list-sub{font-size:13px;color:var(--ink4);margin-top:1px}
 .list-right{font-size:13px;color:var(--ink4);display:flex;align-items:center;gap:6px;flex-shrink:0}
 .chevron{color:var(--line2);font-size:16px;font-weight:400}
 
-.gcard{background:var(--white);border-radius:var(--r16);padding:16px;margin:0 16px 12px;border:1px solid var(--line);box-shadow:var(--shadow);cursor:pointer;transition:transform .1s,box-shadow .1s;-webkit-tap-highlight-color:transparent}
+.gcard{background:var(--white);border-radius:var(--r20);padding:18px;margin:0 16px 12px;border:1px solid var(--line);box-shadow:var(--shadow-card);cursor:pointer;transition:transform .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;overflow:hidden;position:relative}
 .gcard:active{transform:scale(.98);box-shadow:var(--shadow-sm)}
-.gcard-title{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px;margin-bottom:12px;line-height:1.35}
+.gcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gcard-accent,var(--blue));border-radius:4px 0 0 4px}
+.gcard-title{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px;margin-bottom:12px;line-height:1.35;padding-left:4px}
 .gcard-progress{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .gcard-track{flex:1;height:5px;background:var(--bg2);border-radius:var(--rfull);overflow:hidden}
 .gcard-fill{height:100%;border-radius:var(--rfull);transition:width .5s cubic-bezier(.4,0,.2,1)}
 .gcard-pct{font-size:12px;font-weight:700;min-width:30px;text-align:right}
 .gcard-footer{display:flex;align-items:center;justify-content:space-between}
 .gcard-meta{font-size:12px;color:var(--ink4)}
-.health-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--rfull);letter-spacing:.1px}
+.health-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--rfull);letter-spacing:.1px;border:1px solid transparent}
 
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;margin-bottom:8px}
-.stat{background:var(--white);border-radius:var(--r16);padding:16px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
-.stat-n{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:4px}
-.stat-l{font-size:12px;font-weight:500;color:var(--ink4);letter-spacing:.1px}
+.stat{background:var(--white);border-radius:var(--r20);padding:18px 16px;border:1px solid var(--line);box-shadow:var(--shadow-sm);transition:transform .12s}
+.stat:active{transform:scale(.97)}
+.stat-n{font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin-bottom:6px}
+.stat-l{font-size:12px;font-weight:500;color:var(--ink4);letter-spacing:.2px;text-transform:uppercase}
 
 .hero{margin:16px 16px 8px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue2) 100%);border-radius:var(--r20);padding:20px;color:#fff;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(37,99,235,.35)}
 .hero::after{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
@@ -232,7 +235,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;bac
 .btn-ghost{background:var(--bg);border-radius:var(--r8);padding:7px 14px;font-size:13px;color:var(--ink3);border:1px solid var(--line)}
 .btn-red-ghost{background:var(--red-lt);border-radius:var(--r8);padding:5px 10px;font-size:13px;color:var(--red);border:none}
 .btn-row{display:flex;gap:8px}
-.pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rfull);font-size:13px;font-weight:500;border:none;cursor:pointer;font-family:inherit;transition:opacity .1s}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--rfull);font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:all .12s;letter-spacing:-.1px}
 .pill:active{opacity:.7}
 .pill-blue{background:var(--blue-lt);color:var(--blue)}
 .pill-green{background:var(--green-lt);color:var(--green)}
@@ -268,28 +271,28 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;bac
 .step-title.parent{font-weight:600;color:var(--ink)}
 .step-title.root-title{font-size:16px;font-weight:600;letter-spacing:-.1px;color:var(--ink)}
 
-.step-row[data-depth="1"]{background:#ffffff;border-left:3px solid #2563eb}
+.step-row[data-depth="1"]{background:#ffffff;border-left:3px solid #3b82f6}
 [data-theme="dark"] .step-row[data-depth="1"]{background:var(--white)}
 .step-row[data-depth="1"] .step-title{color:var(--ink);font-weight:600}
 .step-row[data-depth="1"] .step-check{border-color:#2563eb}
 .step-row[data-depth="1"] .step-check.on{background:#2563eb;border-color:#2563eb}
 .step-row[data-depth="1"] .spine-gap.has-line::before,.step-row[data-depth="1"] .spine-hook::before,.step-row[data-depth="1"] .spine-hook::after{background:#93c5fd}
 
-.step-row[data-depth="2"]{background:#eff6ff;border-left:3px solid #6366f1}
+.step-row[data-depth="2"]{background:#f8faff;border-left:3px solid #818cf8}
 [data-theme="dark"] .step-row[data-depth="2"]{background:#1e1b4b}
 .step-row[data-depth="2"] .step-title{color:var(--ink2);font-weight:400}
 .step-row[data-depth="2"] .step-check{border-color:#6366f1}
 .step-row[data-depth="2"] .step-check.on{background:#6366f1;border-color:#6366f1}
 .step-row[data-depth="2"] .spine-gap.has-line::before,.step-row[data-depth="2"] .spine-hook::before,.step-row[data-depth="2"] .spine-hook::after{background:#a5b4fc}
 
-.step-row[data-depth="3"]{background:#f5f3ff;border-left:3px solid #8b5cf6}
+.step-row[data-depth="3"]{background:#f9f8ff;border-left:3px solid #a78bfa}
 [data-theme="dark"] .step-row[data-depth="3"]{background:#2e1065}
 .step-row[data-depth="3"] .step-title{color:var(--ink3);font-weight:400}
 .step-row[data-depth="3"] .step-check{border-color:#8b5cf6}
 .step-row[data-depth="3"] .step-check.on{background:#8b5cf6;border-color:#8b5cf6}
 .step-row[data-depth="3"] .spine-gap.has-line::before,.step-row[data-depth="3"] .spine-hook::before,.step-row[data-depth="3"] .spine-hook::after{background:#c4b5fd}
 
-.step-row[data-depth="4"]{background:#faf5ff;border-left:3px solid #a78bfa}
+.step-row[data-depth="4"]{background:#fbfaff;border-left:3px solid #c4b5fd}
 [data-theme="dark"] .step-row[data-depth="4"]{background:#3b0764}
 .step-row[data-depth="4"] .step-title{color:var(--ink4);font-weight:400}
 .step-row[data-depth="4"] .step-check{border-color:#a78bfa}
@@ -470,7 +473,7 @@ input[type=date].date-input{border:none;outline:none;font-size:12px;font-family:
 .confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;animation:confetti-fall 2.5s ease-out forwards}
 @keyframes confetti-fall{0%{transform:translateY(-10vh) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
 
-.undo-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 18px;border-radius:var(--r12);font-size:14px;font-weight:500;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-lg);z-index:300;animation:up .3s ease}
+.undo-toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--ink2);color:var(--white);padding:12px 18px;border-radius:var(--r16);font-size:14px;font-weight:500;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-lg);z-index:300;animation:up .3s ease;white-space:nowrap}
 .undo-btn{background:var(--blue);color:#fff;border:none;border-radius:var(--r8);padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 .undo-btn:active{opacity:.7}
 
@@ -1443,28 +1446,27 @@ function GoalsTab({ db, setDb, onOpen, making, setMaking, onCreate, onUndoAction
         const done = leaves.filter(n => n.done).length;
         const complete = p === 100 && leaves.length > 0;
         return (
-          <div key={g.id} className="gcard up" onClick={() => onOpen(g.id)}>
-            <div className="gcard-title">{g.title}</div>
+          <div key={g.id} className="gcard up" style={{"--gcard-accent": g.tagColor || "var(--blue)"}} onClick={() => onOpen(g.id)}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
+              <div className="gcard-title" style={{marginBottom:0,flex:1}}>{g.title}</div>
+              <button className="archive-btn" onClick={e => archive(g.id, e)} title="Archive" style={{flexShrink:0,marginLeft:8,marginTop:-2}}>🗑</button>
+            </div>
             {g.tag && (
-              <div className="goal-tag-row">
-                <span className="goal-tag" style={{ background: g.tagColor + "20", color: g.tagColor }}>
+              <div style={{marginBottom:10}}>
+                <span className="goal-tag" style={{ background: g.tagColor + "18", color: g.tagColor, border: `1px solid ${g.tagColor}30` }}>
                   <span className="tag-dot" style={{ background: g.tagColor }} />{g.tag}
                 </span>
               </div>
             )}
             <div className="gcard-progress">
-              <div className="gcard-track"><div className="gcard-fill" style={{ width: p + "%", background: complete ? "var(--green)" : "var(--blue)" }} /></div>
-              <span className="gcard-pct" style={{ color: complete ? "var(--green)" : "var(--blue)" }}>{p}%</span>
+              <div className="gcard-track"><div className="gcard-fill" style={{ width: p + "%", background: complete ? "var(--green)" : (g.tagColor || "var(--blue)") }} /></div>
+              <span className="gcard-pct" style={{ color: complete ? "var(--green)" : (g.tagColor || "var(--blue)") }}>{p}%</span>
               <ProgressRing pct={p} size={28} stroke={2} />
             </div>
             <div className="gcard-footer">
-              <span className="gcard-meta">{leaves.length ? `${done} of ${leaves.length} steps` : "No steps yet"}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="health-tag" style={{ background: h.bg, color: h.c }}>{h.e} {h.l}</span>
-                <button className="archive-btn" onClick={e => archive(g.id, e)} title="Archive">🗑</button>
-              </div>
+              <span className="gcard-meta">{leaves.length ? `${done}/${leaves.length} steps done` : "No steps yet — tap to add"}</span>
+              <span className="health-tag" style={{ background: h.bg, color: h.c, border: `1px solid ${h.c}30` }}>{h.e} {h.l} · {dAgo(h.d)}</span>
             </div>
-            <div style={{ fontSize: 12, color: "var(--ink4)", marginTop: 6 }}>Last activity: {dAgo(h.d)}</div>
           </div>
         );
       })}
@@ -1584,13 +1586,19 @@ function TodayTab({ db, setDb, onOpen }) {
   return (
     <div className="scroll">
       <div className="today-hero">
-        <div style={{ fontSize: 13, fontWeight: 500, opacity: .75, marginBottom: 4 }}>{hr < 12 ? "Morning" : "Afternoon"} focus</div>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px", marginBottom: total ? 14 : 0, lineHeight: 1.2 }}>
-          {total === 0 ? "Nothing planned yet." : doneFoc.length === total ? "All done! 🎉" : `${foc.length} task${foc.length !== 1 ? "s" : ""} remaining`}
+        <div style={{fontSize:11,fontWeight:700,opacity:.65,marginBottom:6,letterSpacing:".8px",textTransform:"uppercase"}}>
+          {hr<12?"Good morning":"hr<17?"Good afternoon":"Good evening"} · {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-.6px", marginBottom: total ? 16 : 4, lineHeight: 1.15 }}>
+          {total === 0 ? "Nothing planned
+for today." : doneFoc.length === total ? "All done! 🎉" : `${foc.length} left
+to do today.`}
         </div>
         {total > 0 && <>
-          <div style={{ height: 5, background: "rgba(255,255,255,.2)", borderRadius: 9, overflow: "hidden" }}><div style={{ height: "100%", background: "#fff", borderRadius: 9, width: prog + "%", transition: "width .4s" }} /></div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,.65)", marginTop: 6 }}>{doneFoc.length} of {total} done · {prog}%</div>
+          <div style={{ height: 5, background: "rgba(255,255,255,.25)", borderRadius: 9, overflow: "hidden", marginBottom:6 }}>
+            <div style={{ height: "100%", background: "#fff", borderRadius: 9, width: prog + "%", transition: "width .5s cubic-bezier(.4,0,.2,1)" }} />
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", fontWeight:500 }}>{doneFoc.length} of {total} completed · {prog}%</div>
         </>}
       </div>
 
@@ -1681,8 +1689,11 @@ function DashTab({ db, onOpen, onOpenArchive }) {
   return (
     <div className="scroll">
       <div className="hero">
+        <div style={{fontSize:12,fontWeight:500,opacity:.6,marginBottom:4,letterSpacing:".5px",textTransform:"uppercase"}}>
+          {new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}
+        </div>
         <div className="hero-greet">{greet}</div>
-        <div className="hero-line">Never let an idea die.</div>
+        <div className="hero-line">{goals.length===0?"Start by adding your first goal.":done>0?`${done} step${done!==1?"s":""} completed. Keep going.`:"Never let an idea die."}</div>
         <div className="hero-stats">
           <div><div className="hero-stat-n">{goals.length}</div><div className="hero-stat-l">Goals</div></div>
           <div><div className="hero-stat-n">{done}</div><div className="hero-stat-l">Done</div></div>
