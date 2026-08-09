@@ -1,7 +1,7 @@
 {
-  "name": "Mind OS v2 \u2014 Never let an idea die",
+  "name": "Mind OS — Never let an idea die",
   "short_name": "Mind OS",
-  "description": "A planning engine with goals, steps, decisions, and daily focus. Now with dark mode, export, and archive.",
+  "description": "A planning engine that breaks goals into trees of steps, sub-steps, and tasks.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

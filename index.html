@@ -4,112 +4,166 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Mind OS</title>
-
-<script>
-  (function() {
-    const t = localStorage.getItem('mindos_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  })();
-</script>
-
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#2563eb" id="theme-meta" />
+<meta name="theme-color" content="#2563eb" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Mind OS" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="icon" type="image/png" href="icon-192.png" />
-
 <style>
-  html, body { margin:0; padding:0; background:#f4f4f6; -webkit-tap-highlight-color: transparent; }
-  [data-theme="dark"] html, [data-theme="dark"] body { background:#09090b; }
-  #root { min-height: 100vh; }
-  #boot {
-    position: fixed; inset: 0; background: #f4f4f6;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-family: -apple-system, system-ui, sans-serif;
-    padding: 24px; text-align: center;
-    transition: background .2s;
-  }
-  [data-theme="dark"] #boot { background: #09090b; }
-  #boot .logo { width: 56px; height: 56px; border-radius: 16px; background: #2563eb;
-    display:flex; align-items:center; justify-content:center; color:#fff; font-size: 26px; font-weight:700;
-    box-shadow: 0 4px 16px rgba(37,99,235,.3); margin-bottom: 14px; }
-  #boot .label { color: #71717a; font-size: 14px; }
-  [data-theme="dark"] #boot .label { color: #a1a1aa; }
-  #boot .err {
-    display: none; margin-top: 20px; max-width: 420px;
-    background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
-    padding: 14px 16px; color: #991b1b; font-size: 13px; line-height: 1.6;
-    text-align: left; white-space: pre-wrap; word-break: break-word;
-  }
-  #boot .retry {
-    display:none; margin-top: 14px; background:#2563eb; color:#fff; border:none;
-    border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight:600; cursor:pointer;
-  }
+  html,body{margin:0;padding:0;background:#f4f4f6;-webkit-tap-highlight-color:transparent}
+  #root{min-height:100vh}
+  #boot{position:fixed;inset:0;background:#f4f4f6;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;padding:24px;text-align:center}
+  .boot-logo{width:56px;height:56px;border-radius:16px;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:700;box-shadow:0 4px 16px rgba(37,99,235,.3);margin-bottom:14px}
+  .boot-label{color:#71717a;font-size:14px;margin-bottom:4px}
+  .boot-bar{width:180px;height:3px;background:#e4e4e7;border-radius:2px;overflow:hidden;margin-top:12px}
+  .boot-progress{height:100%;background:#2563eb;border-radius:2px;width:0%;transition:width .3s ease}
+  #boot-err{display:none;margin-top:20px;max-width:420px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:#991b1b;font-size:13px;line-height:1.6;text-align:left}
+  #boot-retry{display:none;margin-top:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:14px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
-
 <div id="boot">
-  <div class="logo">M</div>
-  <div class="label" id="boot-label">Loading Mind OS…</div>
-  <div class="err" id="boot-err"></div>
-  <button class="retry" id="boot-retry" onclick="location.reload()">Try again</button>
+  <div class="boot-logo">M</div>
+  <div class="boot-label" id="boot-label">Loading Mind OS…</div>
+  <div class="boot-bar"><div class="boot-progress" id="boot-progress"></div></div>
+  <div id="boot-err"></div>
+  <button id="boot-retry" onclick="location.reload()">Try again</button>
 </div>
 <div id="root"></div>
 
 <script>
-  let booted = false;
-  function showBootError(msg) {
-    if (booted) return;
-    const label = document.getElementById('boot-label');
-    const err = document.getElementById('boot-err');
-    const retry = document.getElementById('boot-retry');
-    if (label) label.textContent = 'Something went wrong loading Mind OS';
-    if (err) { err.style.display = 'block'; err.textContent = msg; }
-    if (retry) retry.style.display = 'inline-block';
+var booted = false;
+var progress = document.getElementById('boot-progress');
+var label = document.getElementById('boot-label');
+
+function setProgress(pct, text) {
+  if (progress) progress.style.width = pct + '%';
+  if (text && label) label.textContent = text;
+}
+
+function showError(msg) {
+  if (booted) return;
+  label.textContent = 'Something went wrong loading Mind OS';
+  var err = document.getElementById('boot-err');
+  var retry = document.getElementById('boot-retry');
+  if (err) { err.style.display = 'block'; err.textContent = msg; }
+  if (retry) retry.style.display = 'inline-block';
+  if (progress) progress.style.background = '#ef4444';
+}
+
+window.addEventListener('error', function(e) {
+  showError((e.message||'Unknown error') + (e.filename ? '\n\nFile: ' + e.filename + (e.lineno ? ':' + e.lineno : '') : ''));
+});
+window.addEventListener('unhandledrejection', function(e) {
+  showError('Error: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+});
+
+// Load scripts sequentially with proper fallback chain
+// Each script is tried from CDN 1 → CDN 2 → CDN 3 before giving up
+function loadScript(urls, onSuccess, onFail) {
+  var i = 0;
+  function tryNext() {
+    if (i >= urls.length) { onFail(); return; }
+    var url = urls[i++];
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = function() { onSuccess(); };
+    s.onerror = function() { document.head.removeChild(s); tryNext(); };
+    document.head.appendChild(s);
   }
-  window.addEventListener('error', (e) => {
-    showBootError((e.message || 'Unknown error') + (e.filename ? '\n\nFile: ' + e.filename + (e.lineno ? ':' + e.lineno : '') : ''));
-  });
-  window.addEventListener('unhandledrejection', (e) => {
-    showBootError('Promise error: ' + (e.reason?.message || e.reason || 'Unknown'));
-  });
-  setTimeout(() => {
-    const root = document.getElementById('root');
-    if (root && root.children.length === 0) {
-      showBootError('Mind OS is taking longer than expected to load.\nThis usually means a script failed to download (check your connection), or a CDN (unpkg/jsdelivr) is temporarily unavailable.');
-    }
-  }, 12000);
-</script>
+  tryNext();
+}
 
-<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"
-  onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/react@18/umd/react.production.min.js';document.head.appendChild(s);"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"
-  onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';document.head.appendChild(s);"></script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"
-  onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@babel/standalone/babel.min.js';document.head.appendChild(s);"></script>
-<script type="text/babel" data-presets="react" src="app.jsx"></script>
+function loadBabelScript(urls, onSuccess, onFail) {
+  var i = 0;
+  function tryNext() {
+    if (i >= urls.length) { onFail(); return; }
+    var url = urls[i++];
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = function() { onSuccess(); };
+    s.onerror = function() { document.head.removeChild(s); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+}
 
-<script>
-  const check = setInterval(() => {
-    const root = document.getElementById('root');
-    if (root && root.children.length > 0) {
-      booted = true;
-      const boot = document.getElementById('boot');
+setProgress(5, 'Loading React…');
+
+loadScript(
+  [
+    'https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js',
+    'https://unpkg.com/react@18/umd/react.production.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js'
+  ],
+  function() {
+    setProgress(30, 'Loading ReactDOM…');
+    loadScript(
+      [
+        'https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js',
+        'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js'
+      ],
+      function() {
+        setProgress(60, 'Loading compiler…');
+        loadBabelScript(
+          [
+            'https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.10/babel.min.js',
+            'https://unpkg.com/@babel/standalone@7.23.10/babel.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js'
+          ],
+          function() {
+            setProgress(85, 'Starting app…');
+            // Now load app.jsx for Babel to transform
+            var appScript = document.createElement('script');
+            appScript.type = 'text/babel';
+            appScript.setAttribute('data-presets', 'react');
+            appScript.src = 'app.jsx';
+            appScript.onerror = function() {
+              showError('Failed to load app.jsx — check that the file exists in your GitHub repo.');
+            };
+            document.head.appendChild(appScript);
+          },
+          function() { showError('Failed to load Babel compiler from all CDNs.\nCheck your internet connection and try again.'); }
+        );
+      },
+      function() { showError('Failed to load ReactDOM from all CDNs.\nCheck your internet connection and try again.'); }
+    );
+  },
+  function() { showError('Failed to load React from all CDNs.\nCheck your internet connection and try again.'); }
+);
+
+// Watch for app mount
+var checkInterval = setInterval(function() {
+  var root = document.getElementById('root');
+  if (root && root.children.length > 0) {
+    booted = true;
+    setProgress(100);
+    setTimeout(function() {
+      var boot = document.getElementById('boot');
       if (boot) boot.style.display = 'none';
-      clearInterval(check);
-    }
-  }, 80);
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js').catch((err) => {
-        console.error('Service worker registration failed:', err);
-      });
-    });
+    }, 200);
+    clearInterval(checkInterval);
   }
-</script>
+}, 80);
 
+// 30s hard timeout (generous for slow connections)
+setTimeout(function() {
+  if (!booted) {
+    showError('Mind OS is taking too long to load.\nThis usually means a CDN script failed to download.\nCheck your internet connection and tap "Try again".');
+  }
+}, 30000);
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('service-worker.js').catch(function(e) {
+      console.warn('SW registration failed:', e);
+    });
+  });
+}
+</script>
 </body>
 </html>
